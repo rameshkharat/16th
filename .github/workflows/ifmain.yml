@@ -1,20 +1,37 @@
-name: matrix
+name: Container
 on: push
-jobs:
-  checking-node-version:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-        node_version: [6, 8, 10]
-        include:
-          - os: ubuntu-latest
-            node_version: 8
-        exclude:
-          - os: ubuntu-latest
-            node_version: 6
-          - os: macos-latest
-            node_version: 8
-    runs-on: ${{matrix.os}}
+
+jobs: 
+  docker-steps:
+    runs-on: ubuntu-latest
+    container:
+      image: node:10.18.0-jessie
     steps:
-      - name: check node version
+      - name: log node version
         run: node -v
+      - name: Step with docker
+        uses: docker://node:12.14.1-alpine3.10
+        with:
+          entrypoint: "/bin/echo"
+          args: "Hello World"
+      - name: Log node version
+        uses: docker://node:12.14.1-alpine3.10
+        with:
+          entrypoint: /usr/local/bin/node
+          args: -v
+  node-docker:
+    runs-on: ubuntu-latest
+    services:
+      app:
+        image: kharatramesh/node-api:latest
+        ports:
+          - 3001:3000
+      mongo:
+        image: mongo
+        ports:
+          - "27017:27017"
+    steps:
+      - name: Post a user
+        run: 'curl -X POST http://localhost:3001/api/user -H ''Content-Type: application/json'' -d ''{"username": "hello","address": "dwded"}'''
+      - name: Get Users
+        run: curl http://localhost:3001/api/users
